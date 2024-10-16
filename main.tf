@@ -240,10 +240,10 @@ resource "aws_transfer_user" "transfer_server_user" {
 ##----------------------------------------------------------------------------------
 
 resource "aws_transfer_ssh_key" "transfer_server_ssh_key" {
-  count     = var.enabled ? length(var.sftp_users) : 0
+  for_each  = var.enabled ? { for user in var.sftp_users : user.user_name => user } : {}
   server_id = join("", aws_transfer_server.transfer_server[*].id)
-  user_name = aws_transfer_user.transfer_server_user[count.index].user_name
-  body      = aws_transfer_user.transfer_server_user[count.index].public_key
+  user_name = each.value.user_name
+  body      = each.value.public_key
 }
 
 
@@ -253,9 +253,9 @@ resource "aws_transfer_ssh_key" "transfer_server_ssh_key" {
 ##----------------------------------------------------------------------------------
 
 resource "aws_eip" "sftp" {
-  count = var.enabled && var.eip_enabled ? length(var.subnet_ids) : 0
-  vpc   = local.is_vpc
-  tags  = module.labels.tags
+  count  = var.enabled && var.eip_enabled ? length(var.subnet_ids) : 0
+  domain = local.is_vpc
+  tags   = module.labels.tags
 }
 
 ##----------------------------------------------------------------------------------
